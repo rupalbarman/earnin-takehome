@@ -1,0 +1,55 @@
+services:
+  db:
+    container_name: db
+    build:
+      context: .
+      dockerfile: db/Dockerfile
+    volumes:
+      - ./db/docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=core
+    ports:
+      - 5433:5432
+    networks:
+      - earnin_network
+  
+  redis:
+    container_name: redis
+    image: redis:6.2-alpine
+    ports:
+      - 6379:6379
+    networks:
+      - earnin_network
+
+  api:
+    profiles: ["all", "api"]
+    platform: linux/amd64
+    container_name: api
+    command: sh -c "python manage.py runserver 0.0.0.0:8000"
+    build:
+      context: .
+      dockerfile: Dockerfile
+    env_file:
+      - ./.env
+    environment:
+      - DATABASE_URL=postgres://postgres:postgres@db:5432/core
+      - REDIS_URL=redis://redis:6379/0
+    ports:
+      - 8001:8000
+    volumes:
+      - .:/usr/src/app
+    depends_on:
+      - db
+      - redis
+    networks:
+      - earnin_network
+
+volumes:
+  cache:
+    driver: local
+
+networks:
+  earnin_network:
+    driver: bridge
