@@ -1,3 +1,5 @@
+from unittest.mock import patch
+
 from django.test import TestCase
 from rest_framework import status
 from rest_framework.test import APIClient
@@ -41,6 +43,23 @@ class AccountViewTest(TestCase):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         print(response.data)
+
+    def test_account_create_limit(self):
+        self.api.force_authenticate(self.user)
+
+        with patch("account.views.ACCOUNT_LIMIT", 1):
+            data = {
+                "name": "Account 1",
+            }
+
+            response = self.api.post(
+                path="/account/create/",
+                data=data,
+                format="json",
+            )
+
+            self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+            self.assertEqual(self.user.accounts.count(), 1)
 
     def test_account_add_metrics(self):
         self.api.force_authenticate(self.user)

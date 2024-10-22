@@ -1,6 +1,7 @@
 from django.shortcuts import get_object_or_404
 from rest_framework import status
 from rest_framework.decorators import action
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import ViewSet
@@ -12,6 +13,7 @@ from account.serializers import (
     AccountSerializer,
 )
 from account.throttle import AccountMetricThrottle
+from earnin.settings import ACCOUNT_LIMIT, ACCOUNT_METRIC_LIMIT
 from metric.external import call_api
 from metric.models import Metric
 
@@ -80,6 +82,11 @@ class AccountViewSet(ViewSet):
         serializer.is_valid(raise_exception=True)
         validated_data = serializer.validated_data
 
+        existing_accounts_count = user.accounts.count()
+
+        if existing_accounts_count >= ACCOUNT_LIMIT:
+            raise PermissionDenied("Account limit exceeded for user")
+
         # Data operations
         account = Account.objects.create(user=user, name=validated_data["name"])
 
@@ -105,10 +112,18 @@ class AccountViewSet(ViewSet):
         # Data operations
         qs = Account.objects.filter(user=user)
         account = get_object_or_404(qs, pk=pk)
+        existing_metrics_count = account.metrics.count()
         metrics = Metric.objects.filter(id__in=metric_ids).all()
         account_metrics_to_create = [
             AccountMetric(account=account, metric=m) for m in metrics
         ]
+
+        if (
+            existing_metrics_count + len(account_metrics_to_create)
+            >= ACCOUNT_METRIC_LIMIT
+        ):
+            raise PermissionDenied("Metric limit exceeded for account")
+
         AccountMetric.objects.bulk_create(
             objs=account_metrics_to_create, batch_size=100, ignore_conflicts=True
         )

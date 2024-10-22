@@ -158,3 +158,7 @@ REST_FRAMEWORK = {
         "rest_framework.authentication.SessionAuthentication",
     ]
 }
+
+# Environment variables
+ACCOUNT_LIMIT = config("ACCOUNT_LIMIT", cast=int, default=50)
+ACCOUNT_METRIC_LIMIT = config("ACCOUNT_METRIC_LIMIT", cast=int, default=200)
