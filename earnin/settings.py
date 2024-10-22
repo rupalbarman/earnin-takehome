@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    "rest_framework",
     'rest_framework.authtoken',
     'user',
     'account',
@@ -76,6 +77,18 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'earnin.wsgi.application'
+
+REDIS_URL = config("REDIS_URL", cast=str, default="")
+
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": REDIS_URL,
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+        },
+    }
+}
 
 
 # Database

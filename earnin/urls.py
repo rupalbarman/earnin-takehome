@@ -19,9 +19,11 @@ from django.urls import path
 from rest_framework.routers import SimpleRouter
 
 from account.views import SignUpViewSet
+from metric.views import MetricViewSet
 
 router = SimpleRouter()
 router.register("account", SignUpViewSet, "signup-view-set")
+router.register("metric", MetricViewSet, "metric-view-set")
 
 urlpatterns = [
     path('admin/', admin.site.urls),

@@ -3,9 +3,10 @@ from rest_framework.test import APIClient
 from rest_framework import status
 
 from account.models import Account
+from metric.utils import create_inital_metrics
 from user.models import User
 
-class SignUpViewTest(TestCase):
+class AccountViewTest(TestCase):
     def setUp(self) -> None:
         self.api = APIClient()
 
@@ -19,7 +20,9 @@ class SignUpViewTest(TestCase):
             name="Account Dummy",
         )
 
-    def test_account_signup(self):
+        create_inital_metrics()
+
+    def test_account_create(self):
         data = {
             "user": {
                 "name": "Rupal",
@@ -30,7 +33,7 @@ class SignUpViewTest(TestCase):
         }
 
         response = self.api.post(
-            path="/account/create-account/",
+            path="/account/create/",
             data=data,
             format="json",
         )
@@ -57,3 +60,14 @@ class SignUpViewTest(TestCase):
         )
 
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_account_metric(self):
+        self.api.force_authenticate(self.user)
+
+        response = self.api.get(
+            path=f"/account/{self.account.id}/metric/?metric_ids=1,23,4",
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        print(response.data)
