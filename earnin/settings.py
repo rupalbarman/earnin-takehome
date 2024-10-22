@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "rest_framework",
     "rest_framework.authtoken",
+    "django_celery_beat",
     "user",
     "account",
     "metric",
@@ -162,3 +163,6 @@ REST_FRAMEWORK = {
 # Environment variables
 ACCOUNT_LIMIT = config("ACCOUNT_LIMIT", cast=int, default=50)
 ACCOUNT_METRIC_LIMIT = config("ACCOUNT_METRIC_LIMIT", cast=int, default=200)
+
+CELERY_BROKER_URL = config("CELERY_BROKER_URL", default=REDIS_URL)
+CELERY_RESULT_BACKEND = config("CELERY_RESULT_BACKEND", default=REDIS_URL)
