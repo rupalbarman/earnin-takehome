@@ -1,28 +1,35 @@
 from django.shortcuts import get_object_or_404
-from rest_framework.viewsets import ViewSet
-from rest_framework.permissions import AllowAny, IsAuthenticated
-from rest_framework.decorators import action
-from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.decorators import action
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.viewsets import ViewSet
 
-from account.models import Account
-from account.serializers import AccountSerializer, SignUpSerializer
+from account.models import Account, AccountMetric
+from account.serializers import (
+    AccountAddMetricSerializer,
+    AccountCreateSerializer,
+    AccountSerializer,
+)
 from account.throttle import AccountMetricThrottle
 from metric.external import call_api
+from metric.models import Metric
 
-class SignUpViewSet(ViewSet):
-    serializer_class = SignUpSerializer
-    permission_classes = (AllowAny,)
 
+class AccountViewSet(ViewSet):
     @action(
         detail=True,
         methods=["GET"],
         url_path="info",
-        permission_classes=(IsAuthenticated,)
+        permission_classes=(IsAuthenticated,),
     )
     def info(self, request, pk: int):
         user = request.user
-        account = get_object_or_404(Account.objects.filter(user=user), pk=pk)
+        qs = Account.objects.filter(user=user).prefetch_related(
+            "metrics",
+            "metrics__metric",
+        )
+        account = get_object_or_404(qs, pk=pk)
         account_data = AccountSerializer(account).data
         return Response(account_data, status=status.HTTP_200_OK)
 
@@ -48,7 +55,9 @@ class SignUpViewSet(ViewSet):
             print("Fetching from DB")
             metric_slugs = account.metrics.values_list("metric__slug", flat=True)
         else:
-            metric_slugs = account.metrics.filter(id__in=metric_ids).values_list("metric__slug", flat=True)
+            metric_slugs = account.metrics.filter(id__in=metric_ids).values_list(
+                "metric__slug", flat=True
+            )
 
         print(metric_ids)
         print(metric_slugs)
@@ -61,6 +70,49 @@ class SignUpViewSet(ViewSet):
         detail=False,
         methods=["POST"],
         url_path="create",
+        permission_classes=(IsAuthenticated,),
     )
     def create_account(self, request):
-        return Response({"detail": "ok"}, status=status.HTTP_200_OK)
+        user = request.user
+
+        # Validations
+        serializer = AccountCreateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        validated_data = serializer.validated_data
+
+        # Data operations
+        account = Account.objects.create(user=user, name=validated_data["name"])
+
+        # Response
+        serializer = AccountSerializer(account)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    @action(
+        detail=True,
+        methods=["POST"],
+        url_path="add-metrics",
+        permission_classes=(IsAuthenticated,),
+    )
+    def add_metrics(self, request, pk: int):
+        user = request.user
+
+        # Validations
+        serializer = AccountAddMetricSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        validated_data = serializer.validated_data
+        metric_ids = validated_data["metric_ids"]
+
+        # Data operations
+        qs = Account.objects.filter(user=user)
+        account = get_object_or_404(qs, pk=pk)
+        metrics = Metric.objects.filter(id__in=metric_ids).all()
+        account_metrics_to_create = [
+            AccountMetric(account=account, metric=m) for m in metrics
+        ]
+        AccountMetric.objects.bulk_create(
+            objs=account_metrics_to_create, batch_size=100, ignore_conflicts=True
+        )
+
+        # Response
+        serializer = AccountSerializer(account)
+        return Response(serializer.data, status=status.HTTP_200_OK)

@@ -1,12 +1,21 @@
 from rest_framework import serializers
 
-from user.serializers import UserSerializer
+from metric.serializers import MetricSerializer
 
-class SignUpSerializer(serializers.Serializer):
-    user = UserSerializer()
-    password = serializers.CharField(required=True)
-    account_name = serializers.CharField(required=True)
+
+class AccountMetricSerializer(serializers.Serializer):
+    metric = MetricSerializer()
+
+
+class AccountCreateSerializer(serializers.Serializer):
+    name = serializers.CharField(required=True)
+
+
+class AccountAddMetricSerializer(serializers.Serializer):
+    metric_ids = serializers.ListField(child=serializers.IntegerField(), default=[])
+
 
 class AccountSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     name = serializers.CharField()
+    account_metrics = AccountMetricSerializer(many=True, source="metrics")

@@ -1,7 +1,7 @@
 from metric.models import Metric
 
 
-def create_inital_metrics() -> None:
+def create_initial_metrics() -> None:
     METRICS = [
         {"slug": "visitors", "name": "Visitors per day"},
         {"slug": "impressions", "name": "Impressions"},

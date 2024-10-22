@@ -1,18 +1,20 @@
 from django.test import TestCase
-from rest_framework.test import APIClient
 from rest_framework import status
+from rest_framework.test import APIClient
 
 from account.models import Account
-from metric.utils import create_inital_metrics
+from metric.models import Metric
+from metric.utils import create_initial_metrics
 from user.models import User
+
 
 class AccountViewTest(TestCase):
     def setUp(self) -> None:
         self.api = APIClient()
 
         self.user = User.objects.create(
-            email='dummy@gmail.com',
-            name='Dummy',
+            email="dummy@gmail.com",
+            name="Dummy",
         )
 
         self.account = Account.objects.create(
@@ -20,16 +22,15 @@ class AccountViewTest(TestCase):
             name="Account Dummy",
         )
 
-        create_inital_metrics()
+        create_initial_metrics()
+
+        self.metrics = list(Metric.objects.all())
 
     def test_account_create(self):
+        self.api.force_authenticate(self.user)
+
         data = {
-            "user": {
-                "name": "Rupal",
-                "email": "rupal@gmail.com"
-            },
-            "password": 124,
-            "account_name": "Account 1",
+            "name": "Account 1",
         }
 
         response = self.api.post(
@@ -39,6 +40,23 @@ class AccountViewTest(TestCase):
         )
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+        print(response.data)
+
+    def test_account_add_metrics(self):
+        self.api.force_authenticate(self.user)
+
+        data = {
+            "metric_ids": [m.id for m in self.metrics][:2],
+        }
+
+        response = self.api.post(
+            path=f"/account/{self.account.id}/add-metrics/",
+            data=data,
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        print(response.data)
 
     def test_account_info(self):
         self.api.force_authenticate(self.user)
@@ -52,6 +70,7 @@ class AccountViewTest(TestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["id"], self.account.id)
         self.assertEqual(response.data["name"], self.account.name)
+        print(response.data)
 
         # 404 check
         response = self.api.get(

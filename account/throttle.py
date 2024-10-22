@@ -1,9 +1,10 @@
-from rest_framework.throttling import BaseThrottle
 from django.core.cache import cache
+from rest_framework.throttling import BaseThrottle
 
 # 10 requests / min
 MAX_REQUESTS = 10
-TIMEOUT_SEC = 60 
+TIMEOUT_SEC = 60
+
 
 class AccountMetricThrottle(BaseThrottle):
     def allow_request(self, request, view):
