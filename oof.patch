@@ -1,0 +1,32 @@
+diff --git a/docker-compose.yaml b/docker-compose.yaml
+index 7a639ea..3050b90 100644
+--- a/docker-compose.yaml
++++ b/docker-compose.yaml
+@@ -11,15 +11,15 @@ services:
+       - POSTGRES_PASSWORD=postgres
+       - POSTGRES_DB=core
+     ports:
+-      - 5433:5432
++      - 5434:5432
+     networks:
+       - earnin_network
+   
+   redis:
+-    container_name: redis
++    container_name: redis_1
+     image: redis:6.2-alpine
+     ports:
+-      - 6379:6379
++      - 6380:6379
+     networks:
+       - earnin_network
+ 
+@@ -37,7 +37,7 @@ services:
+       - DATABASE_URL=postgres://postgres:postgres@db:5432/core
+       - REDIS_URL=redis://redis:6379/0
+     ports:
+-      - 8001:8000
++      - 8002:8000
+     volumes:
+       - .:/usr/src/app
+     depends_on:

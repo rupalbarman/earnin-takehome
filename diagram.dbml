@@ -1,0 +1,38 @@
+// Use DBML to define your database structure
+// Docs: https://dbml.dbdiagram.io/docs
+
+Table User {
+  id integer [primary key]
+  email email
+}
+
+Table Token {
+  id integer [primary key]
+  user_id integer
+  token varchar [unique]
+}
+
+Table Account {
+  id integer [primary key]
+  user_id integer
+  name varchar
+}
+
+Table AccountMetric {
+  id integer [primary key]
+  account_id integer
+  metric_id integer
+}
+
+Table Metric {
+  id integer [primary key]
+  slug varchar
+}
+
+Ref: Token.user_id - User.id
+
+Ref: Account.user_id > User.id
+
+Ref: AccountMetric.account_id > Account.id
+
+Ref: AccountMetric.metric_id - Metric.id
