@@ -21,10 +21,12 @@ from rest_framework.routers import SimpleRouter
 
 from account.views import AccountViewSet
 from metric.views import MetricViewSet
+from user.views import UserViewSet
 
 router = SimpleRouter()
 router.register("account", AccountViewSet, "signup-view-set")
 router.register("metric", MetricViewSet, "metric-view-set")
+router.register("user", UserViewSet, "user-view-set")
 
 urlpatterns = [
     path("admin/", admin.site.urls),
